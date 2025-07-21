@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <title>普通話拼音選擇遊戲</title>
+  <style>
+    body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; background: #f9f9f9; }
+    h1 { color: #007acc; }
+    button { font-size: 18px; padding: 10px 20px; margin: 5px 0; width: 100%; max-width: 400px; }
+    .hidden { display: none; }
+    .feedback { margin-top: 10px; font-weight: bold; }
+    #next-btn { 
+      background-color: #4CAF50;
+      color: white;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+<h1>🎮 普通話拼音選擇遊戲</h1>
+
+<div id="start-screen">
+  <label>選擇題數：
+    <select id="question-count">
+      <option value="5">5題</option>
+      <option value="10" selected>10題</option>
+      <option value="20">20題</option>
+    </select>
+  </label>
+  <br><br>
+  <button onclick="startGame()">開始遊戲</button>
+</div>
+
+<div id="game-area" class="hidden">
+  <h2 id="word-display"></h2>
+  <button onclick="playPronunciation()">🔊 播放發音</button>
+  <div id="options"></div>
+  <div class="feedback" id="feedback"></div>
+  <p>得分：<span id="score">0</span> ／ 題號：<span id="current">1</span> / <span id="total"></span></p>
+  <button id="next-btn" class="hidden" onclick="nextQuestion()">下一題</button>
+</div>
+
+<div id="end-screen" class="hidden">
+  <h2>🎉 遊戲結束！</h2>
+  <p>你的得分是：<span id="final-score"></span></p>
+  <button onclick="location.reload()">再玩一次</button>
+</div>
+
+<script>
+const wordBank = [
+{ word: "機場", pinyin: "jī chǎng" },  
+{ word: "火車站", pinyin: "huǒ chē zhàn" },  
+{ word: "地鐵", pinyin: "dì tiě" },  
+{ word: "公交車", pinyin: "gōng jiāo chē" },  
+{ word: "出租車", pinyin: "chū zū chē" },  
+{ word: "票", pinyin: "piào" },  
+{ word: "登機口", pinyin: "dēng jī kǒu" },  
+{ word: "行李", pinyin: "xíng li" },  
+{ word: "護照", pinyin: "hù zhào" },  
+{ word: "簽證", pinyin: "qiān zhèng" },  
+{ word: "航班", pinyin: "háng bān" },  
+{ word: "延誤", pinyin: "yán wù" },  
+{ word: "出口", pinyin: "chū kǒu" },  
+{ word: "入口", pinyin: "rù kǒu" },  
+{ word: "站台", pinyin: "zhàn tái" },  
+{ word: "售票處", pinyin: "shòu piào chù" },  
+{ word: "行李寄存", pinyin: "xíng li jì cún" },  
+{ word: "安檢", pinyin: "ān jiǎn" },  
+{ word: "轉機", pinyin: "zhuǎn jī" },  
+{ word: "終點站", pinyin: "zhōng diǎn zhàn" },  
+{ word: "酒店", pinyin: "jiǔ diàn" },  
+{ word: "房間", pinyin: "fáng jiān" },  
+{ word: "預訂", pinyin: "yù dìng" },  
+{ word: "前臺", pinyin: "qián tái" },  
+{ word: "鑰匙", pinyin: "yào shi" },  
+{ word: "退房", pinyin: "tuì fáng" },  
+{ word: "單人房", pinyin: "dān rén fáng" },  
+{ word: "雙人房", pinyin: "shuāng rén fáng" },  
+{ word: "早餐", pinyin: "zǎo cān" },  
+{ word: "空調", pinyin: "kōng tiáo" },  
+{ word: "浴室", pinyin: "yù shì" },  
+{ word: "毛巾", pinyin: "máo jīn" },  
+{ word: "枕頭", pinyin: "zhěn tou" },  
+{ word: "毯子", pinyin: "tǎn zi" },  
+{ word: "叫醒服務", pinyin: "jiào xǐng fú wù" },  
+{ word: "房卡", pinyin: "fáng kǎ" },  
+{ word: "洗衣服務", pinyin: "xǐ yī fú wù" },  
+{ word: "電梯", pinyin: "diàn tī" },  
+{ word: "樓層", pinyin: "lóu céng" },  
+{ word: "餐廳", pinyin: "cān tīng" },  
+{ word: "菜單", pinyin: "cài dān" },  
+{ word: "水", pinyin: "shuǐ" },  
+{ word: "咖啡", pinyin: "kā fēi" },  
+{ word: "茶", pinyin: "chá" },  
+{ word: "啤酒", pinyin: "pí jiǔ" },  
+{ word: "素食", pinyin: "sù shí" },  
+{ word: "辣", pinyin: "là" },  
+{ word: "甜", pinyin: "tián" },  
+{ word: "買單", pinyin: "mǎi dān" },  
+{ word: "筷子", pinyin: "kuài zi" },  
+{ word: "勺子", pinyin: "sháo zi" },  
+{ word: "叉子", pinyin: "chā zi" },  
+{ word: "碗", pinyin: "wǎn" },  
+{ word: "杯子", pinyin: "bēi zi" },  
+{ word: "冰塊", pinyin: "bīng kuài" },  
+{ word: "服務員", pinyin: "fú wù yuán" },  
+{ word: "打包", pinyin: "dǎ bāo" },  
+{ word: "推薦菜", pinyin: "tuī jiàn cài" },  
+{ word: "好吃", pinyin: "hǎo chī" },  
+{ word: "博物館", pinyin: "bó wù guǎn" },  
+{ word: "公園", pinyin: "gōng yuán" },  
+{ word: "海灘", pinyin: "hǎi tān" },  
+{ word: "地圖", pinyin: "dì tú" },  
+{ word: "導遊", pinyin: "dǎo yóu" },  
+{ word: "拍照", pinyin: "pāi zhào" },  
+{ word: "門票", pinyin: "mén piào" },  
+{ word: "紀念品", pinyin: "jì niàn pǐn" },  
+{ word: "爬山", pinyin: "pá shān" },  
+{ word: "游泳", pinyin: "yóu yǒng" },  
+{ word: "划船", pinyin: "huá chuán" },  
+{ word: "自行車", pinyin: "zì xíng chē" },  
+{ word: "纜車", pinyin: "lǎn chē" },  
+{ word: "寺廟", pinyin: "sì miào" },  
+{ word: "城堡", pinyin: "chéng bǎo" },  
+{ word: "廣場", pinyin: "guǎng chǎng" },  
+{ word: "噴泉", pinyin: "pēn quán" },  
+{ word: "動物園", pinyin: "dòng wù yuán" },  
+{ word: "遊樂園", pinyin: "yóu lè yuán" },  
+{ word: "夜市", pinyin: "yè shì" },  
+{ word: "商店", pinyin: "shāng diàn" },  
+{ word: "價格", pinyin: "jià gé" },  
+{ word: "便宜", pinyin: "pián yi" },  
+{ word: "貴", pinyin: "guì" },  
+{ word: "打折", pinyin: "dǎ zhé" },  
+{ word: "信用卡", pinyin: "xìn yòng kǎ" },  
+{ word: "現金", pinyin: "xiàn jīn" },  
+{ word: "試穿", pinyin: "shì chuān" },  
+{ word: "尺寸", pinyin: "chǐ cùn" },  
+{ word: "退稅", pinyin: "tuì shuì" },  
+{ word: "購物袋", pinyin: "gòu wù dài" },  
+{ word: "超市", pinyin: "chāo shì" },  
+{ word: "市場", pinyin: "shì chǎng" },  
+{ word: "禮物", pinyin: "lǐ wù" },  
+{ word: "手錶", pinyin: "shǒu biǎo" },  
+{ word: "衣服", pinyin: "yī fu" },  
+{ word: "鞋子", pinyin: "xié zi" },  
+{ word: "化妝品", pinyin: "huà zhuāng pǐn" },  
+{ word: "電子產品", pinyin: "diàn zǐ chǎn pǐn" },  
+{ word: "特產", pinyin: "tè chǎn" },  
+{ word: "醫院", pinyin: "yī yuàn" },  
+{ word: "警察", pinyin: "jǐng chá" },  
+{ word: "救命", pinyin: "jiù mìng" },  
+{ word: "藥", pinyin: "yào" },  
+{ word: "不舒服", pinyin: "bù shū fu" },  
+{ word: "過敏", pinyin: "guò mǐn" },  
+{ word: "廁所", pinyin: "cè suǒ" },  
+{ word: "迷路", pinyin: "mí lù" },  
+{ word: "錢包丟了", pinyin: "qián bāo diū le" },  
+{ word: "使館", pinyin: "shǐ guǎn" },  
+{ word: "救護車", pinyin: "jiù hù chē" },  
+{ word: "頭痛", pinyin: "tóu tòng" },  
+{ word: "發燒", pinyin: "fā shāo" },  
+{ word: "感冒", pinyin: "gǎn mào" },  
+{ word: "醫生", pinyin: "yī shēng" },  
+{ word: "護士", pinyin: "hù shi" },  
+{ word: "藥店", pinyin: "yào diàn" },  
+{ word: "消毒", pinyin: "xiāo dú" },  
+{ word: "繃帶", pinyin: "jiǎn dài" },  
+{ word: "緊急電話", pinyin: "jǐn jí diàn huà" },  
+{ word: "你好！", pinyin: "nǐ hǎo!" },  
+{ word: "早上好", pinyin: "zǎo shang hǎo" },  
+{ word: "晚上好", pinyin: "wǎn shang hǎo" },  
+{ word: "再見", pinyin: "zài jiàn" },  
+{ word: "我叫...", pinyin: "wǒ jiào..." },  
+{ word: "你叫什麼名字？", pinyin: "nǐ jiào shén me míng zi?" },  
+{ word: "我是遊客", pinyin: "wǒ shì yóu kè" },  
+{ word: "我來自...", pinyin: "wǒ lái zì..." },  
+{ word: "很高興認識你", pinyin: "hěn gāo xìng rèn shi nǐ" },  
+{ word: "你會說英語嗎？", pinyin: "nǐ huì shuō yīng yǔ ma?" },  
+{ word: "請問地鐵站怎麼走？", pinyin: "qǐng wèn dì tiě zhàn zěn me zǒu?" },  
+{ word: "附近有超市嗎？", pinyin: "fù jìn yǒu chāo shì ma?" },  
+{ word: "我想去...", pinyin: "wǒ xiǎng qù..." },  
+{ word: "遠不遠？", pinyin: "yuǎn bu yuǎn?" },  
+{ word: "走路要多久？", pinyin: "zǒu lù yào duō jiǔ?" },  
+{ word: "請在地圖上指給我看", pinyin: "qǐng zài dì tú shang zhǐ gěi wǒ kàn" },  
+{ word: "左轉", pinyin: "zuǒ zhuǎn" },  
+{ word: "右轉", pinyin: "yòu zhuǎn" },  
+{ word: "直走", pinyin: "zhí zǒu" },  
+{ word: "這裡是哪裡？", pinyin: "zhè lǐ shì nǎ lǐ?" },  
+{ word: "這個多少錢？", pinyin: "zhè ge duō shǎo qián?" },  
+{ word: "太貴了", pinyin: "tài guì le" },  
+{ word: "可以便宜一點嗎？", pinyin: "kě yǐ pián yi yī diǎn ma?" },  
+{ word: "我要這個", pinyin: "wǒ yào zhè ge" },  
+{ word: "有沒有其他顏色？", pinyin: "yǒu méi yǒu qí tā yán sè?" },  
+{ word: "可以試穿嗎？", pinyin: "kě yǐ shì chuān ma?" },  
+{ word: "刷卡還是現金？", pinyin: "shuā kǎ hái shì xiàn jīn?" },  
+{ word: "有折扣嗎？", pinyin: "yǒu zhé kòu ma?" },  
+{ word: "我不需要", pinyin: "wǒ bù xū yào" },  
+{ word: "我只是看看", pinyin: "wǒ zhǐ shì kàn kan" },  
+{ word: "有英文菜單嗎？", pinyin: "yǒu yīng wén cài dān ma?" },  
+{ word: "請給我...", pinyin: "qǐng gěi wǒ..." },  
+{ word: "不要辣", pinyin: "bú yào là" },  
+{ word: "少放鹽", pinyin: "shǎo fàng yán" },  
+{ word: "我是素食者", pinyin: "wǒ shì sù shí zhě" },  
+{ word: "這個好吃嗎？", pinyin: "zhè ge hǎo chī ma?" },  
+{ word: "請加冰", pinyin: "qǐng jiā bīng" },  
+{ word: "請給我水", pinyin: "qǐng gěi wǒ shuǐ" },  
+{ word: "結帳", pinyin: "jié zhàng" },  
+{ word: "可以分開付嗎？", pinyin: "kě yǐ fēn kāi fù ma?" },  
+{ word: "幫幫我！", pinyin: "bāng bāng wǒ!" },  
+{ word: "我生病了", pinyin: "wǒ shēng bìng le" },  
+{ word: "我需要醫生", pinyin: "wǒ xū yào yī shēng" },  
+{ word: "我的錢包被偷了", pinyin: "wǒ de qián bāo bèi tōu le" },  
+{ word: "請報警", pinyin: "qǐng bào jǐng" },  
+{ word: "這裡有醫院嗎？", pinyin: "zhè lǐ yǒu yī yuàn ma?" },  
+{ word: "我過敏", pinyin: "wǒ guò mǐn" },  
+{ word: "我迷路了", pinyin: "wǒ mí lù le" },  
+{ word: "請聯繫中國大使館", pinyin: "qǐng lián xì zhōng guó dà shǐ guǎn" },  
+{ word: "我的護照丟了", pinyin: "wǒ de hù zhào diū le" },  
+{ word: "1, 2, 3, 4, 5", pinyin: "yī, èr, sān, sì, wǔ" },  
+{ word: "6, 7, 8, 9, 10", pinyin: "liù, qī, bā, jiǔ, shí" },  
+{ word: "現在幾點？", pinyin: "xiàn zài jǐ diǎn?" },  
+{ word: "今天", pinyin: "jīn tiān" },  
+{ word: "明天", pinyin: "míng tiān" },  
+{ word: "昨天", pinyin: "zuó tiān" },  
+{ word: "早上", pinyin: "zǎo shang" },  
+{ word: "下午", pinyin: "xià wǔ" },  
+{ word: "晚上", pinyin: "wǎn shang" },  
+{ word: "一小時後", pinyin: "yī xiǎo shí hòu" },  
+{ word: "可以拍照嗎？", pinyin: "kě yǐ pāi zhào ma?" },  
+{ word: "這裡有廁所嗎？", pinyin: "zhè lǐ yǒu cè suǒ ma?" },  
+{ word: "免費嗎？", pinyin: "miǎn fèi ma?" },  
+{ word: "Wi-Fi密碼是多少？", pinyin: "wǎi fāi mì mǎ shì duō shǎo?" },  
+{ word: "請說慢一點", pinyin: "qǐng shuō màn yī diǎn" },  
+{ word: "我不明白", pinyin: "wǒ bù míng bai" },  
+{ word: "請寫下來", pinyin: "qǐng xiě xià lái" },  
+{ word: "太棒了！", pinyin: "tài bàng le!" },  
+{ word: "下次見！", pinyin: "xià cì jiàn!" }
+];
+
+const confusables = {
+  "initials": {
+    "zh": [
+      "z",
+      "ch"
+    ],
+    "ch": [
+      "zh",
+      "q"
+    ],
+    "sh": [
+      "s",
+      "x"
+    ],
+    "z": [
+      "zh",
+      "j"
+    ],
+    "c": [
+      "ch",
+      "q"
+    ],
+    "s": [
+      "sh",
+      "x"
+    ],
+    "j": [
+      "z",
+      "q"
+    ],
+    "q": [
+      "c",
+      "ch"
+    ],
+    "x": [
+      "sh",
+      "s"
+    ],
+    "b": [
+      "p",
+      "d"
+    ],
+    "d": [
+      "b",
+      "t"
+    ],
+    "t": [
+      "d",
+      "k"
+    ],
+    "g": [
+      "k",
+      "h"
+    ],
+    "k": [
+      "g",
+      "t"
+    ],
+    "h": [
+      "k",
+      "x"
+    ]
+  },
+  "finals": {
+    "ang": [
+      "an",
+      "eng"
+    ],
+    "eng": [
+      "ang",
+      "en"
+    ],
+    "ing": [
+      "in",
+      "iang"
+    ],
+    "in": [
+      "ing",
+      "ian"
+    ],
+    "ian": [
+      "in",
+      "iang"
+    ],
+    "iang": [
+      "ian",
+      "ing"
+    ],
+    "ao": [
+      "ou",
+      "an"
+    ],
+    "ou": [
+      "ao",
+      "o"
+    ],
+    "an": [
+      "ang",
+      "en"
+    ],
+    "en": [
+      "eng",
+      "an"
+    ],
+    "ong": [
+      "eng",
+      "uang"
+    ]
+  }
+};
+
+let questions = [];
+let current = 0, score = 0, total = 0;
+
+function startGame() {
+  total = parseInt(document.getElementById("question-count").value);
+  questions = shuffleArray(wordBank).slice(0, total);
+  document.getElementById("start-screen").classList.add("hidden");
+  document.getElementById("game-area").classList.remove("hidden");
+  document.getElementById("total").textContent = total;
+  showQuestion();
+}
+
+function showQuestion() {
+  let item = questions[current];
+  document.getElementById("word-display").textContent = item.word;
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("current").textContent = current + 1;
+  document.getElementById("next-btn").classList.add("hidden");
+
+  let correct = item.pinyin;
+  let options = generateConfusableOptions(correct);
+  options = shuffleArray([correct, ...options.slice(0, 3)]);
+
+  let container = document.getElementById("options");
+  container.innerHTML = "";
+  options.forEach(p => {
+    let btn = document.createElement("button");
+    btn.textContent = p;
+    btn.onclick = () => checkAnswer(p, correct);
+    container.appendChild(btn);
+  });
+}
+
+function checkAnswer(selected, correct) {
+  let fb = document.getElementById("feedback");
+  if (selected === correct) {
+    score++;
+    fb.textContent = "✅ 正確！";
+  } else {
+    fb.textContent = `❌ 錯了，正確答案是：${correct}`;
+  }
+  document.getElementById("score").textContent = score;
+
+  // 禁用所有選項按鈕
+  document.querySelectorAll("#options button").forEach(btn => {
+    btn.disabled = true;
+  });
+  
+  // 顯示「下一題」按鈕
+  document.getElementById("next-btn").classList.remove("hidden");
+}
+
+function nextQuestion() {
+  // 啟用所有選項按鈕
+  document.querySelectorAll("#options button").forEach(btn => {
+    btn.disabled = false;
+  });
+  
+  current++;
+  if (current < total) {
+    showQuestion();
+  } else {
+    endGame();
+  }
+}
+
+function endGame() {
+  document.getElementById("game-area").classList.add("hidden");
+  document.getElementById("end-screen").classList.remove("hidden");
+  document.getElementById("final-score").textContent = `${score} / ${total}`;
+}
+
+function playPronunciation() {
+  let word = questions[current].word;
+  let utter = new SpeechSynthesisUtterance(word);
+  utter.lang = "zh-CN";
+  speechSynthesis.speak(utter);
+}
+
+function shuffleArray(arr) {
+  return arr.sort(() => Math.random() - 0.5);
+}
+
+function generateConfusableOptions(correct) {
+  const tones = {
+    'a': ['ā','á','ǎ','à'],
+    'e': ['ē','é','ě','è'],
+    'i': ['ī','í','ǐ','ì'],
+    'o': ['ō','ó','ǒ','ò'],
+    'u': ['ū','ú','ǔ','ù'],
+    'ü': ['ǖ','ǘ','ǚ','ǜ']
+  };
+  const toneMap = {
+    'ā':'a','á':'a','ǎ':'a','à':'a',
+    'ē':'e','é':'e','ě':'e','è':'e',
+    'ī':'i','í':'i','ǐ':'i','ì':'i',
+    'ō':'o','ó':'o','ǒ':'o','ò':'o',
+    'ū':'u','ú':'u','ǔ':'u','ù':'u',
+    'ǖ':'ü','ǘ':'ü','ǚ':'ü','ǜ':'ü'
+  };
+  const removeTone = (pinyin) => pinyin.split('').map(c => toneMap[c] || c).join('');
+  const applyTone = (syl) => {
+    for (let v in tones) {
+      if (syl.includes(v)) {
+        return syl.replace(v, tones[v][Math.floor(Math.random()*4)]);
+      }
+    }
+    return syl;
+  };
+
+  let noToneParts = removeTone(correct).split(" ");
+  let variations = new Set();
+
+  while (variations.size < 10) {
+    let variation = noToneParts.map(syl => {
+      let init = Object.keys(confusables.initials).find(i => syl.startsWith(i));
+      let fin = Object.keys(confusables.finals).find(f => syl.endsWith(f));
+      let newSyl = syl;
+      if (init && confusables.initials[init]) {
+        let newInit = confusables.initials[init][Math.floor(Math.random() * confusables.initials[init].length)];
+        newSyl = newSyl.replace(init, newInit);
+      }
+      if (fin && confusables.finals[fin]) {
+        let newFin = confusables.finals[fin][Math.floor(Math.random() * confusables.finals[fin].length)];
+        newSyl = newSyl.replace(fin, newFin);
+      }
+      return applyTone(newSyl);
+    }).join(" ");
+    if (variation !== correct) variations.add(variation);
+  }
+
+  return Array.from(variations);
+}
+</script>
+</body>
+</html>
