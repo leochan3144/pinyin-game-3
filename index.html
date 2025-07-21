@@ -2,17 +2,140 @@
 <html lang="zh-Hans">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>普通話拼音選擇遊戲</title>
   <style>
-    body { font-family: "Microsoft JhengHei", sans-serif; padding: 20px; background: #f9f9f9; }
-    h1 { color: #007acc; }
-    button { font-size: 18px; padding: 10px 20px; margin: 5px 0; width: 100%; max-width: 400px; }
-    .hidden { display: none; }
-    .feedback { margin-top: 10px; font-weight: bold; }
-    #next-btn { 
+    body {
+      font-family: "Microsoft JhengHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      padding: 15px;
+      background: #f9f9f9;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: #007acc;
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    h2 {
+      font-size: clamp(1.2rem, 4vw, 1.5rem);
+      text-align: center;
+      margin: 15px 0;
+      min-height: 3em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    button {
+      font-size: clamp(16px, 4vw, 18px);
+      padding: 12px 20px;
+      margin: 8px 0;
+      width: 100%;
+      max-width: 500px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    button:hover {
+      opacity: 0.9;
+      transform: scale(1.02);
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .feedback {
+      margin-top: 15px;
+      font-weight: bold;
+      text-align: center;
+      font-size: clamp(16px, 4vw, 18px);
+      min-height: 2em;
+    }
+    
+    #next-btn {
       background-color: #4CAF50;
       color: white;
-      margin-top: 20px;
+      margin-top: 25px;
+      font-weight: bold;
+    }
+    
+    #start-screen, #game-area, #end-screen {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    #question-count {
+      font-size: clamp(16px, 4vw, 18px);
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      margin-left: 10px;
+    }
+    
+    label {
+      font-size: clamp(16px, 4vw, 18px);
+    }
+    
+    #options {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    #options button {
+      background-color: #f0f0f0;
+    }
+    
+    #options button:hover {
+      background-color: #e0e0e0;
+    }
+    
+    #score-display {
+      text-align: center;
+      margin: 15px 0;
+      font-size: clamp(16px, 4vw, 18px);
+    }
+    
+    #pronunciation-btn {
+      background-color: #2196F3;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      
+      #start-screen, #game-area, #end-screen {
+        padding: 15px;
+      }
+      
+      button {
+        padding: 10px 15px;
+      }
     }
   </style>
 </head>
@@ -33,16 +156,20 @@
 
 <div id="game-area" class="hidden">
   <h2 id="word-display"></h2>
-  <button onclick="playPronunciation()">🔊 播放發音</button>
+  <button id="pronunciation-btn" onclick="playPronunciation()">
+    <span>🔊</span> 播放發音
+  </button>
   <div id="options"></div>
   <div class="feedback" id="feedback"></div>
-  <p>得分：<span id="score">0</span> ／ 題號：<span id="current">1</span> / <span id="total"></span></p>
+  <div id="score-display">
+    得分：<span id="score">0</span> ／ 題號：<span id="current">1</span> / <span id="total"></span>
+  </div>
   <button id="next-btn" class="hidden" onclick="nextQuestion()">下一題</button>
 </div>
 
 <div id="end-screen" class="hidden">
   <h2>🎉 遊戲結束！</h2>
-  <p>你的得分是：<span id="final-score"></span></p>
+  <p style="text-align: center; font-size: 1.2rem;">你的得分是：<span id="final-score"></span></p>
   <button onclick="location.reload()">再玩一次</button>
 </div>
 
@@ -240,112 +367,34 @@ const wordBank = [
 
 const confusables = {
   "initials": {
-    "zh": [
-      "z",
-      "ch"
-    ],
-    "ch": [
-      "zh",
-      "q"
-    ],
-    "sh": [
-      "s",
-      "x"
-    ],
-    "z": [
-      "zh",
-      "j"
-    ],
-    "c": [
-      "ch",
-      "q"
-    ],
-    "s": [
-      "sh",
-      "x"
-    ],
-    "j": [
-      "z",
-      "q"
-    ],
-    "q": [
-      "c",
-      "ch"
-    ],
-    "x": [
-      "sh",
-      "s"
-    ],
-    "b": [
-      "p",
-      "d"
-    ],
-    "d": [
-      "b",
-      "t"
-    ],
-    "t": [
-      "d",
-      "k"
-    ],
-    "g": [
-      "k",
-      "h"
-    ],
-    "k": [
-      "g",
-      "t"
-    ],
-    "h": [
-      "k",
-      "x"
-    ]
+    "zh": ["z", "ch"],
+    "ch": ["zh", "q"],
+    "sh": ["s", "x"],
+    "z": ["zh", "j"],
+    "c": ["ch", "q"],
+    "s": ["sh", "x"],
+    "j": ["z", "q"],
+    "q": ["c", "ch"],
+    "x": ["sh", "s"],
+    "b": ["p", "d"],
+    "d": ["b", "t"],
+    "t": ["d", "k"],
+    "g": ["k", "h"],
+    "k": ["g", "t"],
+    "h": ["k", "x"]
   },
   "finals": {
-    "ang": [
-      "an",
-      "eng"
-    ],
-    "eng": [
-      "ang",
-      "en"
-    ],
-    "ing": [
-      "in",
-      "iang"
-    ],
-    "in": [
-      "ing",
-      "ian"
-    ],
-    "ian": [
-      "in",
-      "iang"
-    ],
-    "iang": [
-      "ian",
-      "ing"
-    ],
-    "ao": [
-      "ou",
-      "an"
-    ],
-    "ou": [
-      "ao",
-      "o"
-    ],
-    "an": [
-      "ang",
-      "en"
-    ],
-    "en": [
-      "eng",
-      "an"
-    ],
-    "ong": [
-      "eng",
-      "uang"
-    ]
+    "ang": ["an", "eng"],
+    "eng": ["ang", "en"],
+    "ing": ["in", "iang"],
+    "in": ["ing", "ian"],
+    "ian": ["in", "iang"],
+    "iang": ["ian", "ing"],
+    "ao": ["ou", "an"],
+    "ou": ["ao", "o"],
+    "an": ["ang", "en"],
+    "en": ["eng", "an"],
+    "ong": ["eng", "uang"]
   }
 };
 
@@ -387,14 +436,23 @@ function checkAnswer(selected, correct) {
   if (selected === correct) {
     score++;
     fb.textContent = "✅ 正確！";
+    fb.style.color = "#4CAF50";
   } else {
     fb.textContent = `❌ 錯了，正確答案是：${correct}`;
+    fb.style.color = "#f44336";
   }
   document.getElementById("score").textContent = score;
 
   // 禁用所有選項按鈕
   document.querySelectorAll("#options button").forEach(btn => {
     btn.disabled = true;
+    if (btn.textContent === correct) {
+      btn.style.backgroundColor = "#4CAF50";
+      btn.style.color = "white";
+    } else if (btn.textContent === selected && selected !== correct) {
+      btn.style.backgroundColor = "#f44336";
+      btn.style.color = "white";
+    }
   });
   
   // 顯示「下一題」按鈕
@@ -405,6 +463,8 @@ function nextQuestion() {
   // 啟用所有選項按鈕
   document.querySelectorAll("#options button").forEach(btn => {
     btn.disabled = false;
+    btn.style.backgroundColor = "#f0f0f0";
+    btn.style.color = "black";
   });
   
   current++;
@@ -425,6 +485,7 @@ function playPronunciation() {
   let word = questions[current].word;
   let utter = new SpeechSynthesisUtterance(word);
   utter.lang = "zh-CN";
+  utter.rate = 0.9;
   speechSynthesis.speak(utter);
 }
 
